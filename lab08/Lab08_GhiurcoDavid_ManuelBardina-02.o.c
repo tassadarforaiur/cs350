@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     printf("LC3 Simulator skeleton: CS 350 Lab 7\n");
     CPU cpu_value, *cpu = &cpu_value;
     initialize_control_unit(cpu);
-    //    initialize_memory(argc, argv, cpu);
+    initialize_memory(argc, argv, cpu);
     dump_control_unit(cpu);
     dump_memory(cpu);
     char *prompt = "> ";
@@ -217,14 +217,17 @@ void initialize_control_unit(CPU *cpu)
 //                }
 //                printf("\n");
 //            }
-    for (i = 0; i < MEMLEN; i++)
+    for (i = 0; i < MEMLEN-1; i++)
     {
-      //        while((*cpu).mem[i] == x0000) i++;
-        col ++;
+      //        while((*cpu).mem[i] == 0) i++;
+      if ((*cpu).mem[i] != 0)
+	{
+	col ++;
         if (col > 10) {col = 0; printf("\n");}
         if (col%10 == 5) printf(" ");
         printf("%4x",(*cpu).mem[i]);
-}
+	}
+    }
         }
 
 // dump_registers(CPU *cpu): Print register values in two rows of
