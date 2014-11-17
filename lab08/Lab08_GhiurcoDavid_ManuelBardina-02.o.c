@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     printf("LC3 Simulator skeleton: CS 350 Lab 7\n");
     CPU cpu_value, *cpu = &cpu_value;
     initialize_control_unit(cpu);
-    initialize_memory(argc, argv, cpu);
+    //    initialize_memory(argc, argv, cpu);
     dump_control_unit(cpu);
     dump_memory(cpu);
     char *prompt = "> ";
@@ -124,7 +124,7 @@ void initialize_control_unit(CPU *cpu)
             // after the number and ignore blank lines and lines
             // that don't begin with a number.
             //
-            words_read = sscanf(buffer, "%d", &value_read);
+            words_read = sscanf(buffer, "%x", &value_read);
 
 
             if(words_read == 1)
