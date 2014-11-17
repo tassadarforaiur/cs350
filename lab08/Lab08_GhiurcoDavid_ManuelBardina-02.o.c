@@ -1,5 +1,4 @@
 // Bardina_Manuel, Ghiurco_David
-
 // CS 350, Fall 2014
 // Lab 7: SDC Simulator
 //
@@ -88,7 +87,7 @@ void initialize_control_unit(CPU *cpu)
         cpu->reg[i] = 0;
 
         printf("\nInitial control unit:\n");
-        dump_control_unit(cpu);
+	//        dump_control_unit(cpu);
         printf("\n");
     }
 }
@@ -220,7 +219,7 @@ void initialize_control_unit(CPU *cpu)
 //            }
     for (i = 0; i < MEMLEN; i++)
     {
-        while((*cpu).mem[i] == 0000) i++;
+      //        while((*cpu).mem[i] == x0000) i++;
         col ++;
         if (col > 10) {col = 0; printf("\n");}
         if (col%10 == 5) printf(" ");
