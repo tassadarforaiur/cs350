@@ -57,7 +57,9 @@ int main(int argc, char *argv[])
     printf("LC3 Simulator skeleton: CS 350 Lab 7\n");
     CPU cpu_value, *cpu = &cpu_value;
     initialize_control_unit(cpu);
+    printf("pass cpu init\n"); 
     initialize_memory(argc, argv, cpu);
+    printf("pass mem init\n");
     dump_control_unit(cpu);
     dump_memory(cpu);
     char *prompt = "> ";
@@ -95,14 +97,14 @@ void initialize_control_unit(CPU *cpu)
 //
     void initialize_memory(int argc, char *argv[], CPU *cpu)
     {
-        FILE *datafile = get_datafile(argc, argv);
+      /*        FILE *datafile = get_datafile(argc, argv);
 
         // Will read the next line (words_read = 1 if it started
         // with a memory value). Will set memory location loc to
         // value_read
         //
-        int value_read, words_read, loc = 0, done = 0;
-
+	*/        int value_read, words_read, loc = 0, done = 0;
+      /*
         // Each getline automatically reallocates buffer and
         // updates buffer_len so that we can read in the whole line
         // of input. bytes_read is 0 at end-of-file.  Note we must
@@ -119,7 +121,7 @@ void initialize_control_unit(CPU *cpu)
  
 
 
-	/*
+	
        bytes_read = getline(&buffer, &buffer_len, datafile);
         while (bytes_read != -1 && !done)
         {
@@ -163,10 +165,10 @@ void initialize_control_unit(CPU *cpu)
 
         // Initialize rest of memory
         //
-	//      while (loc < MEMLEN-2)
-	// {
-	//  cpu -> mem[loc++] = 1;
-	    //        }
+      while (loc < MEMLEN-1)
+	 {
+	  cpu -> mem[loc++] = 0;
+	 }
         dump_memory(cpu);
     }
 
