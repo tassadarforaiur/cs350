@@ -54,12 +54,10 @@ void exec_HLT(CPU *cpu);
 //
 int main(int argc, char *argv[])
 {
-    printf("LC3 Simulator skeleton: CS 350 Lab 7\n");
+    printf("LC3 Simulator:  CS 350 Lab 8\n");
     CPU cpu_value, *cpu = &cpu_value;
     initialize_control_unit(cpu);
-    printf("pass cpu init\n"); 
     initialize_memory(argc, argv, cpu);
-    printf("pass mem init\n");
     dump_control_unit(cpu);
     dump_memory(cpu);
     char *prompt = "> ";
@@ -87,17 +85,16 @@ void initialize_control_unit(CPU *cpu)
     for (i = 0; i < NREG; i++)
     {
         cpu->reg[i] = 0;
-    }
-        printf("\nInitial control unit:\n");
-        dump_control_unit(cpu);
-        printf("\n");
-    
+    }  
 }
 // Read and dump initial values for memory
 //
     void initialize_memory(int argc, char *argv[], CPU *cpu)
     {
-           FILE *datafile = get_datafile(argc, argv);
+           
+
+
+      FILE *datafile = get_datafile(argc, argv);
 
         // Will read the next line (words_read = 1 if it started
         // with a memory value). Will set memory location loc to
@@ -113,11 +110,12 @@ void initialize_control_unit(CPU *cpu)
         //
         char *buffer = NULL;
         size_t buffer_len = 0, bytes_read = 0;
-
+	int i, initial = 1;
         // Read in first and succeeding memory values. Stop when we
         // hit a sentinel value, fill up memory, or hit end-of-file.
         //
- 
+	for (i = 0; i < MEMLEN; i++)
+	  (*cpu).mem[i] = 0; 
 
 
 	
@@ -134,17 +132,27 @@ void initialize_control_unit(CPU *cpu)
 
             if(words_read == 1)
             {
-                if(loc >= MEMLEN  || loc < 0)
+	      if (initial && value_read < MEMLEN && value_read > 0)
+		{
+		  loc = value_read;
+		  initial = 0;
+		  (*cpu).pc = value_read;
+		}
+               
+	      else if(value_read < 0 || value_read >= MEMLEN)
                 {
-                    printf("location is out of range \n");
-                    break;
-                }
-                else if(value_read < -9999 || value_read > 9999)
-                {
-                    printf("sentinel %d found at location %d\n", value_read, loc);
-                    break;
-                }
-                else (*cpu).mem[loc++] = value_read;
+		  printf("sentinel %d found at location %d\n", value_read, loc);
+		  break;
+		}
+	      else if(loc >= MEMLEN)
+		{
+		  loc = 0;
+		  (*cpu).mem[loc++] = value_read;
+		}
+		else
+		  {
+		   (*cpu).mem[loc++] = value_read;
+		  }
             }
             // *** STUB *** set memory value at current location to
             // value_read and increment location.  Exceptions: If
@@ -164,11 +172,6 @@ void initialize_control_unit(CPU *cpu)
 
         // Initialize rest of memory
         //
-      while (loc < MEMLEN-1)
-	 {
-	  cpu -> mem[loc++] = 0;
-	 }
-        dump_memory(cpu);
     }
 
 // Get the data file to initialize memory with.  If it was
@@ -186,8 +189,8 @@ void initialize_control_unit(CPU *cpu)
             datafile_name = default_datafile_name;
         else
             datafile_name = argv[1];
-	//         *datafile_nameglobe=*datafile_name;
-        FILE *datafile = fopen(datafile_name, "r");
+	printf("Loading %s\n\n", datafile_name);
+	FILE *datafile = fopen(datafile_name, "r");
         if(!datafile)
         {
             printf("File failed to open \n");
@@ -203,7 +206,8 @@ void initialize_control_unit(CPU *cpu)
 //
         void dump_control_unit(CPU *cpu)
         {
-            printf("pc :  %02d   IR :  %04d  cc :  %02d  RUNNING : %d\n", (*cpu).pc, (*cpu).ir, (*cpu).cc, (*cpu).running);
+	  printf("CONTROL UNIT:\n");
+            printf("pc :  x%04x   IR :  x%04x  cc :  %x  RUNNING : %d", (*cpu).pc, (*cpu).ir, (*cpu).cc, (*cpu).running);
             dump_registers(cpu);
         }
 
@@ -215,6 +219,7 @@ void initialize_control_unit(CPU *cpu)
         {
             int loc = 0;
             int row, col, i;
+	    printf("\n\nMEMORY (addresses x0000 - xFFFF)\n");
             // ***  ****
 //            for (row = 0; row < 100; row +=10)
 //            {
@@ -226,15 +231,12 @@ void initialize_control_unit(CPU *cpu)
 //                }
 //                printf("\n");
 //            }
-    for (i = 0; i < MEMLEN-1; i++)
+    for (i = 0; i < MEMLEN; i++)
     {
       //        while((*cpu).mem[i] == 0) i++;
       if ((*cpu).mem[i] != 0)
 	{
-	col ++;
-        if (col > 10) {col = 0; printf("\n");}
-        if (col%10 == 5) printf(" ");
-        printf("%4x",(*cpu).mem[i]);
+	  printf("x%04x: x%04x       %x\n",i,(*cpu).mem[i], (*cpu).mem[i]);
 	}
     }
         }
@@ -249,7 +251,7 @@ void initialize_control_unit(CPU *cpu)
             for (i = 0; i < NREG; i++)
             {
                 if(i%4 == 0) printf("\n");
-                printf("R%d :%4x  ", i, (*cpu).reg[i]);
+                printf("R%d x%04x %x   ", i, (*cpu).reg[i], (*cpu).reg[i]);
             }
 
         }
