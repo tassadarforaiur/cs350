@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     printf("LC3 Simulator skeleton: CS 350 Lab 7\n");
     CPU cpu_value, *cpu = &cpu_value;
     initialize_control_unit(cpu);
-    //    initialize_memory(argc, argv, cpu);
+    initialize_memory(argc, argv, cpu);
     dump_control_unit(cpu);
     dump_memory(cpu);
     char *prompt = "> ";
@@ -116,7 +116,11 @@ void initialize_control_unit(CPU *cpu)
         // Read in first and succeeding memory values. Stop when we
         // hit a sentinel value, fill up memory, or hit end-of-file.
         //
-        bytes_read = getline(&buffer, &buffer_len, datafile);
+ 
+
+
+	/*
+       bytes_read = getline(&buffer, &buffer_len, datafile);
         while (bytes_read != -1 && !done)
         {
             // If the line of input begins with an integer, treat
@@ -151,14 +155,18 @@ void initialize_control_unit(CPU *cpu)
             //
             bytes_read = getline(&buffer, &buffer_len, datafile);
         }
-        free(buffer);  // return buffer to OS
+	*/
+	//        free(buffer);  // return buffer to OS
+
+
+
 
         // Initialize rest of memory
         //
-        while (loc < MEMLEN)
-        {
-            cpu -> mem[loc++] = 0;
-        }
+	//      while (loc < MEMLEN-2)
+	// {
+	//  cpu -> mem[loc++] = 1;
+	    //        }
         dump_memory(cpu);
     }
 
@@ -177,7 +185,7 @@ void initialize_control_unit(CPU *cpu)
             *datafile_name = *default_datafile_name;
         else
             *datafile_name = argv[1];
-        // *datafile_nameglobe=*datafile_name;
+	//         *datafile_nameglobe=*datafile_name;
         FILE *datafile = fopen(datafile_name, "r");
         if(!datafile)
         {
