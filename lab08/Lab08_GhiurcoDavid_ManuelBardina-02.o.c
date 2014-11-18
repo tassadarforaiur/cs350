@@ -97,14 +97,13 @@ void initialize_control_unit(CPU *cpu)
 //
     void initialize_memory(int argc, char *argv[], CPU *cpu)
     {
-      /*        FILE *datafile = get_datafile(argc, argv);
+           FILE *datafile = get_datafile(argc, argv);
 
         // Will read the next line (words_read = 1 if it started
         // with a memory value). Will set memory location loc to
         // value_read
         //
-	*/        int value_read, words_read, loc = 0, done = 0;
-      /*
+           int value_read, words_read, loc = 0, done = 0;
         // Each getline automatically reallocates buffer and
         // updates buffer_len so that we can read in the whole line
         // of input. bytes_read is 0 at end-of-file.  Note we must
@@ -157,8 +156,8 @@ void initialize_control_unit(CPU *cpu)
             //
             bytes_read = getline(&buffer, &buffer_len, datafile);
         }
-	*/
-	//        free(buffer);  // return buffer to OS
+       
+	     free(buffer);  // return buffer to OS
 
 
 
@@ -184,9 +183,9 @@ void initialize_control_unit(CPU *cpu)
         char *datafile_name;
 
         if(!argv[1])
-            *datafile_name = *default_datafile_name;
+            datafile_name = default_datafile_name;
         else
-            *datafile_name = argv[1];
+            datafile_name = argv[1];
 	//         *datafile_nameglobe=*datafile_name;
         FILE *datafile = fopen(datafile_name, "r");
         if(!datafile)
