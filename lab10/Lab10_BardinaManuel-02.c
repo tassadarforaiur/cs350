@@ -28,7 +28,7 @@ typedef struct
     int opcode;
     int reg_R;
     int addr_MM;
-} CPU;
+}  CPU;
 
 
 // Prototypes [note the functions are also declared in this order]
@@ -319,7 +319,7 @@ void initialize_control_unit(CPU *cpu)
                 }
                 else if (cmd_char == '\n')
                 {
-                    printf("CPU halted\n");
+		  one_instruction_cycle(cpu);
                 }
                 else
                     printf("%c not a valid command \n",cmd_char);
@@ -412,8 +412,8 @@ void initialize_control_unit(CPU *cpu)
 				if((*cpu).ir > 0) instr_sign = 1;
 				else	   instr_sign = -1;
 
-                // Echo instruction
-                printf("At %02d instr %d %d %02d: ", instr_loc, cpu -> opcode, cpu -> reg_R, cpu -> addr_MM);
+				// Echo instruction
+				printf("x%04x: x%04x ", instr_loc, (*cpu).mem[instr_loc]);
 
                 switch (cpu -> opcode)
                 {
@@ -493,7 +493,7 @@ void initialize_control_unit(CPU *cpu)
 
 
                 default:
-                    printf("Bad opcode!? %d\n", cpu -> opcode);
+                    printf("invalid instruction\n");
                 }
             }
 
