@@ -28,6 +28,8 @@ typedef struct
     int opcode;
     int reg_R;
     int addr_MM;
+    Address cache0;
+    short int cache1;
 }  CPU;
 
 
@@ -45,6 +47,8 @@ void dump_registers(CPU *cpu);
 int read_execute_command(CPU *cpu);
 int execute_command(char cmd_char, CPU *cpu);
 void help_message(void);
+void jump(CPU *cpu);
+void memory(CPU *cpu);
 void many_instruction_cycles(int nbr_cycles, CPU *cpu);
 void one_instruction_cycle(CPU *cpu);
 void exec_HLT(CPU *cpu);
@@ -236,7 +240,7 @@ void initialize_control_unit(CPU *cpu)
       //        while((*cpu).mem[i] == 0) i++;
       if ((*cpu).mem[i] != 0)
 	{
-	  printf("x%04x: x%04x       %x\n",i,(*cpu).mem[i], (*cpu).mem[i]);
+	  printf("x%04hx: x%04hx       %hx\n",i,(*cpu).mem[i], (*cpu).mem[i]);
 	}
     }
         }
@@ -251,7 +255,7 @@ void initialize_control_unit(CPU *cpu)
             for (i = 0; i < NREG; i++)
             {
                 if(i%4 == 0) printf("\n");
-                printf("R%d x%04x %x   ", i, (*cpu).reg[i], (*cpu).reg[i]);
+                printf("R%d x%04hx %hx   ", i, (*cpu).reg[i], (*cpu).reg[i]);
             }
 
         }
@@ -271,6 +275,8 @@ void initialize_control_unit(CPU *cpu)
             //
             int nbr_cycles;
             char cmd_char;
+	    Address loc;
+	    short int val;
             size_t words_read;    // number of items read by sscanf call
 
             int done = 0;	// Should simulator stop?
@@ -281,20 +287,28 @@ void initialize_control_unit(CPU *cpu)
                 done = 1;   // Hit end of file
             }
 
-            words_read = sscanf(cmd_buffer, "%d", &nbr_cycles);
+            words_read = sscanf(cmd_buffer, "%d", &nbr_cycles, "%x", &val);
             // *** ****  If we found a number, do that many
             if (words_read == 1)
-                many_instruction_cycles(nbr_cycles, cpu);
+	      many_instruction_cycles(nbr_cycles, cpu);
             else
             {
-                words_read = sscanf(cmd_buffer, "%c", &cmd_char);
-                done = execute_command(cmd_char, cpu);
+	      words_read = sscanf(cmd_buffer, "%c x%hx x%hx", &cmd_char, &loc, &val);
+	      (*cpu).cache0 = loc;
+	      (*cpu).cache1 = val;
+
+	      if(cmd_char=='j' && words_read != 2)
+		  printf("Jump command should be j adress (in xNNNN format)\n");
+	      else if (cmd_char=='m' && words_read != 3)
+		printf("Memory command should be m addr value (in xNNNN format)\n");
+	      else         
+		done = execute_command(cmd_char, cpu);
                 // instruction cycles.  Otherwise sscanf for a character
                 // and call execute_command with it.  (Note the character
                 // might be '\n'.)
 
-                free(cmd_buffer);
-                return done;
+              free(cmd_buffer);
+              return done;
             }
         }
 
@@ -321,6 +335,14 @@ void initialize_control_unit(CPU *cpu)
                 {
 		  one_instruction_cycle(cpu);
                 }
+		else if (cmd_char == 'j')
+		{
+		  jump(cpu);
+		}
+		else if (cmd_char == 'm')
+	        {
+		  memory(cpu);
+		}
                 else
                     printf("%c not a valid command \n",cmd_char);
                 return 0;
@@ -332,14 +354,44 @@ void initialize_control_unit(CPU *cpu)
             {
                 printf("h or ? for help (prints this message)\n");
                 printf("q to quit\n");
-                printf("d to dump the control unit and mammary\n");
-                printf("\nNot Suppoerted yet:\n");
+                printf("d to dump the control unit and memory\n");
+                printf("recently added\n");
                 printf("j xNNNN to jump to new location\n");
-                printf("m xNNNNN xMMMM to assign memory location xNNNN = value xMMMM\n");
+                printf("m xNNNN xNNNN to assign memory location xNNNN = value xNNNN\n");
                 printf("An integer >0 to execute that many instruction cycles\n");
                 printf("Or just return, which executes one instruction cycle\n");
             }
 
+
+// Jump to desired memory location
+//
+void jump(CPU *cpu)
+{
+  if ((*cpu).cache0 >= MEMLEN || (*cpu).cache0 < 0)
+    printf("invalid location in memory\n");
+  else
+    {
+      (*cpu).pc = (*cpu).cache0;
+      printf("Jumped to x%04hx\n", (*cpu).pc);
+    }
+}
+
+// Store value in memory location
+//
+void memory(CPU *cpu)
+{
+  int missxtakes = 0;
+  if ((*cpu).cache0 >= MEMLEN || (*cpu).cache0 < 0){
+    printf("invalid location in memory\n");
+    missxtakes ++;}
+  if ((*cpu).cache1 >= MEMLEN || (*cpu).cache0 < 0){
+    printf("invalid value to store in memory\n");
+    missxtakes ++;}
+  if(!missxtakes){
+    (*cpu).mem[(*cpu).cache0] = (*cpu).cache1;
+    printf("set mem[x%04hx] to x%04hx\n", (*cpu).cache0, (*cpu).cache1);
+  }
+}
 // Execute a number of instruction cycles.  Exceptions: If the
 // number of cycles is <= 0, complain and return; if the CPU is
 // not running, say so and return; if the number of cycles is
