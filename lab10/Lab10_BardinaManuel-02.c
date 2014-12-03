@@ -1,6 +1,6 @@
-// Bardina_Manuel, Ghiurco_David
+// Bardina_Manuel
 // CS 350, Fall 2014
-// Lab 7: SDC Simulator
+// Lab 10: SDC
 //
 // Illinois Institute of Technology, (c) 2014, James Sasaki
 
@@ -15,7 +15,8 @@ typedef unsigned short int Address;   // type that represents an SDC address
 
 #define MEMLEN 65536
 #define NREG 8
-
+#define WMAX 32768
+#define WMIN -32768
 typedef struct
 {
     Word mem[MEMLEN];
@@ -28,6 +29,7 @@ typedef struct
     int opcode;
     int reg_R;
     int addr_MM;
+    //global variables
     Address cache0;
     short int cache1;
 }  CPU;
@@ -49,6 +51,7 @@ int execute_command(char cmd_char, CPU *cpu);
 void help_message(void);
 void jump(CPU *cpu);
 void memory(CPU *cpu);
+void setRegistrer(CPU *cpu);
 void many_instruction_cycles(int nbr_cycles, CPU *cpu);
 void one_instruction_cycle(CPU *cpu);
 void exec_HLT(CPU *cpu);
@@ -89,13 +92,13 @@ void initialize_control_unit(CPU *cpu)
     for (i = 0; i < NREG; i++)
     {
         cpu->reg[i] = 0;
-    }  
+    }
 }
 // Read and dump initial values for memory
 //
     void initialize_memory(int argc, char *argv[], CPU *cpu)
     {
-           
+
 
 
       FILE *datafile = get_datafile(argc, argv);
@@ -119,10 +122,10 @@ void initialize_control_unit(CPU *cpu)
         // hit a sentinel value, fill up memory, or hit end-of-file.
         //
 	for (i = 0; i < MEMLEN; i++)
-	  (*cpu).mem[i] = 0; 
+	  (*cpu).mem[i] = 0;
 
 
-	
+
        bytes_read = getline(&buffer, &buffer_len, datafile);
         while (bytes_read != -1 && !done)
         {
@@ -142,7 +145,7 @@ void initialize_control_unit(CPU *cpu)
 		  initial = 0;
 		  (*cpu).pc = value_read;
 		}
-               
+
 	      else if(value_read < 0 || value_read >= MEMLEN)
                 {
 		  printf("sentinel %d found at location %d\n", value_read, loc);
@@ -158,7 +161,7 @@ void initialize_control_unit(CPU *cpu)
 		   (*cpu).mem[loc++] = value_read;
 		  }
             }
-            // *** STUB *** set memory value at current location to
+            // set memory value at current location to
             // value_read and increment location.  Exceptions: If
             // loc is out of range, complain and quit the loop. If
             // value_read is outside -9999...9999, then it's a
@@ -168,7 +171,7 @@ void initialize_control_unit(CPU *cpu)
             //
             bytes_read = getline(&buffer, &buffer_len, datafile);
         }
-       
+
 	     free(buffer);  // return buffer to OS
 
 
@@ -224,20 +227,9 @@ void initialize_control_unit(CPU *cpu)
             int loc = 0;
             int row, col, i;
 	    printf("\n\nMEMORY (addresses x0000 - xFFFF)\n");
-            // ***  ****
-//            for (row = 0; row < 100; row +=10)
-//            {
-//                printf("%02d:",row);
-//                for(col=row; col < row +10; col++)
-//                {
-//                    if(col%10 == 5) printf(" ");
-//                    printf("%6d",(*cpu).mem[col]);
-//                }
-//                printf("\n");
-//            }
+
     for (i = 0; i < MEMLEN; i++)
     {
-      //        while((*cpu).mem[i] == 0) i++;
       if ((*cpu).mem[i] != 0)
 	{
 	  printf("x%04hx: x%04hx       %hx\n",i,(*cpu).mem[i], (*cpu).mem[i]);
@@ -274,7 +266,7 @@ void initialize_control_unit(CPU *cpu)
             // Values read using sscanf of command line
             //
             int nbr_cycles;
-            char cmd_char;
+            char cmd_char, pre;
 	    Address loc;
 	    short int val;
             size_t words_read;    // number of items read by sscanf call
@@ -289,24 +281,25 @@ void initialize_control_unit(CPU *cpu)
 
             words_read = sscanf(cmd_buffer, "%d", &nbr_cycles, "%x", &val);
             // *** ****  If we found a number, do that many
+            // instruction cycles.  Otherwise sscanf for a character
+            // and call execute_command with it.  (Note the character
+            // might be '\n'.)
+
             if (words_read == 1)
 	      many_instruction_cycles(nbr_cycles, cpu);
             else
             {
-	      words_read = sscanf(cmd_buffer, "%c x%hx x%hx", &cmd_char, &loc, &val);
+	      words_read = sscanf(cmd_buffer, "%c %c%hx x%hx", &cmd_char, &pre, &loc, &val);
 	      (*cpu).cache0 = loc;
 	      (*cpu).cache1 = val;
 
-	      if(cmd_char=='j' && words_read != 2)
+	      if(cmd_char=='j' && (words_read != 3 || pre !='x'))
 		  printf("Jump command should be j adress (in xNNNN format)\n");
-	      else if (cmd_char=='m' && words_read != 3)
+	      else if (cmd_char == 'm' && (words_read != 4 || pre != 'x'))
 		printf("Memory command should be m addr value (in xNNNN format)\n");
-	      else         
+	      else if (cmd_char == 'r' && (words_read != 4 || pre != 'r'))
+		printf("SetRegistrer command should be r rN value (in xNNNN format) \n");
 		done = execute_command(cmd_char, cpu);
-                // instruction cycles.  Otherwise sscanf for a character
-                // and call execute_command with it.  (Note the character
-                // might be '\n'.)
-
               free(cmd_buffer);
               return done;
             }
@@ -342,6 +335,10 @@ void initialize_control_unit(CPU *cpu)
 		else if (cmd_char == 'm')
 	        {
 		  memory(cpu);
+		}
+		else if (cmd_char == 'r')
+		{
+		    setRegistrer(cpu);
 		}
                 else
                     printf("%c not a valid command \n",cmd_char);
@@ -384,13 +381,32 @@ void memory(CPU *cpu)
   if ((*cpu).cache0 >= MEMLEN || (*cpu).cache0 < 0){
     printf("invalid location in memory\n");
     missxtakes ++;}
-  if ((*cpu).cache1 >= MEMLEN || (*cpu).cache0 < 0){
+  if ((*cpu).cache1 > WMAX || (*cpu).cache1 < WMIN){
     printf("invalid value to store in memory\n");
     missxtakes ++;}
   if(!missxtakes){
     (*cpu).mem[(*cpu).cache0] = (*cpu).cache1;
+    (*cpu).running = 1;
     printf("set mem[x%04hx] to x%04hx\n", (*cpu).cache0, (*cpu).cache1);
   }
+}
+
+void setRegistrer(CPU *cpu)
+{
+  //does absolutely nothing.
+  int missxtakes = 0;
+  if ((*cpu).cache0 >= NREG || ((*cpu).cache0 < 0)){
+    printf("invalid location in register\n");
+    missxtakes ++;}
+  if ((*cpu).cache1 > WMAX || (*cpu).cache1 < WMIN){
+    printf("invalid value to store in register\n");
+    missxtakes ++;}
+  if(!missxtakes){
+    (*cpu).reg[(*cpu).cache0] = (*cpu).cache1;
+    (*cpu).running = 1;
+    printf("set r%hx to x%04hx\n", (*cpu).cache0, (*cpu).cache1);
+  }
+
 }
 // Execute a number of instruction cycles.  Exceptions: If the
 // number of cycles is <= 0, complain and return; if the CPU is
@@ -414,6 +430,7 @@ void memory(CPU *cpu)
 	if(nbr_cycles > 100)
 	{
 		printf("%d is too large for cycle; doing %d \n",nbr_cycles,MEMLEN);
+		nbr_cycles = 100;
 	}
 	int count;
 	for(count = 0; count < nbr_cycles; count++)
@@ -427,10 +444,6 @@ void memory(CPU *cpu)
 
 // Execute one instruction cycle
 //
-
-
-
-//*   temporary commented
 
             void one_instruction_cycle(CPU *cpu)
             {
@@ -454,7 +467,6 @@ void memory(CPU *cpu)
                 cpu -> ir = cpu -> mem[cpu -> pc++];
 
                 // Decode instruction into opcode, reg_R, addr_MM, and instruction sign
-                // *** STUB ****
 				int opcode,reg_R,addr_MM,instr_sign;
 				int posir = abs((*cpu).ir);
 				int temp;
