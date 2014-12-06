@@ -47,11 +47,11 @@ void dump_memory(CPU *cpu);
 void dump_registers(CPU *cpu);
 
 int read_execute_command(CPU *cpu);
-int execute_command(char cmd_char, CPU *cpu);
+int execute_command(char cmd_char, CPU *cpu, Address loc, short int val);
 void help_message(void);
-void jump(CPU *cpu);
-void memory(CPU *cpu);
-void setRegistrer(CPU *cpu);
+void jump(CPU *cpu, Address loc);
+void memory(CPU *cpu, Address loc, short int val);
+void setRegistrer(CPU *cpu, Address loc, short int val);
 void many_instruction_cycles(int nbr_cycles, CPU *cpu);
 void one_instruction_cycle(CPU *cpu);
 void exec_HLT(CPU *cpu);
@@ -213,8 +213,8 @@ void initialize_control_unit(CPU *cpu)
 //
         void dump_control_unit(CPU *cpu)
         {
-	  printf("CONTROL UNIT:\n");
-            printf("pc :  x%04x   IR :  x%04x  cc :  %x  RUNNING : %d", (*cpu).pc, (*cpu).ir, (*cpu).cc, (*cpu).running);
+	  printf("CONTROL UNIT:\n\n");
+            printf("pc :  x%04x   IR :  x%04x  cc :  %x  RUNNING : %d\n", (*cpu).pc, (*cpu).ir, (*cpu).cc, (*cpu).running);
             dump_registers(cpu);
         }
 
@@ -267,8 +267,8 @@ void initialize_control_unit(CPU *cpu)
             //
             int nbr_cycles;
             char cmd_char, pre;
-	    Address loc;
-	    short int val;
+	    Address loc = 0;
+	    short int val = 0;
             size_t words_read;    // number of items read by sscanf call
 
             int done = 0;	// Should simulator stop?
@@ -299,7 +299,8 @@ void initialize_control_unit(CPU *cpu)
 		printf("Memory command should be m addr value (in xNNNN format)\n");
 	      else if (cmd_char == 'r' && (words_read != 4 || pre != 'r'))
 		printf("SetRegistrer command should be r rN value (in xNNNN format) \n");
-		done = execute_command(cmd_char, cpu);
+	      else
+		done = execute_command(cmd_char, cpu, loc, val);
               free(cmd_buffer);
               return done;
             }
@@ -308,7 +309,7 @@ void initialize_control_unit(CPU *cpu)
 // Execute a nonnumeric command; complain if it's not 'h', '?', 'd', 'q' or '\n'
 // Return true for the q command, false otherwise
 //
-            int execute_command(char cmd_char, CPU *cpu)
+int execute_command(char cmd_char, CPU *cpu, Address loc, short int val)
             {
                 if (cmd_char == '?' || cmd_char == 'h')
                 {
@@ -330,15 +331,15 @@ void initialize_control_unit(CPU *cpu)
                 }
 		else if (cmd_char == 'j')
 		{
-		  jump(cpu);
+		  jump(cpu, loc);
 		}
 		else if (cmd_char == 'm')
 	        {
-		  memory(cpu);
+		  memory(cpu, loc, val);
 		}
 		else if (cmd_char == 'r')
 		{
-		    setRegistrer(cpu);
+		  setRegistrer(cpu, loc, val);
 		}
                 else
                     printf("%c not a valid command \n",cmd_char);
@@ -362,49 +363,48 @@ void initialize_control_unit(CPU *cpu)
 
 // Jump to desired memory location
 //
-void jump(CPU *cpu)
+void jump(CPU *cpu, Address loc)
 {
-  if ((*cpu).cache0 >= MEMLEN || (*cpu).cache0 < 0)
+  if (loc  >= MEMLEN || loc < 0)
     printf("invalid location in memory\n");
   else
     {
-      (*cpu).pc = (*cpu).cache0;
+      (*cpu).pc = loc;
       printf("Jumped to x%04hx\n", (*cpu).pc);
     }
 }
 
 // Store value in memory location
 //
-void memory(CPU *cpu)
+void memory(CPU *cpu, Address loc, short int val)
 {
   int missxtakes = 0;
-  if ((*cpu).cache0 >= MEMLEN || (*cpu).cache0 < 0){
+  if (loc >= MEMLEN || loc < 0){
     printf("invalid location in memory\n");
     missxtakes ++;}
-  if ((*cpu).cache1 > WMAX || (*cpu).cache1 < WMIN){
+  if (val > WMAX || val < WMIN){
     printf("invalid value to store in memory\n");
     missxtakes ++;}
   if(!missxtakes){
-    (*cpu).mem[(*cpu).cache0] = (*cpu).cache1;
+    (*cpu).mem[loc] = val;
     (*cpu).running = 1;
-    printf("set mem[x%04hx] to x%04hx\n", (*cpu).cache0, (*cpu).cache1);
+    printf("set mem[x%04hx] to x%04hx\n", loc, val);
   }
 }
 
-void setRegistrer(CPU *cpu)
+  void setRegistrer(CPU *cpu, Address loc, short int val)
 {
-  //does absolutely nothing.
   int missxtakes = 0;
-  if ((*cpu).cache0 >= NREG || ((*cpu).cache0 < 0)){
+  if (loc >= NREG || loc < 0){
     printf("invalid location in register\n");
     missxtakes ++;}
-  if ((*cpu).cache1 > WMAX || (*cpu).cache1 < WMIN){
+  if (val > WMAX || val <  WMIN){
     printf("invalid value to store in register\n");
     missxtakes ++;}
   if(!missxtakes){
-    (*cpu).reg[(*cpu).cache0] = (*cpu).cache1;
+    (*cpu).reg[loc] = val;
     (*cpu).running = 1;
-    printf("set r%hx to x%04hx\n", (*cpu).cache0, (*cpu).cache1);
+    printf("set r%hx to x%04hx\n", loc, val);
   }
 
 }
